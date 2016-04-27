@@ -3,4 +3,5 @@ Execute this scripts in your ManageIQ folder. It will enable your MIQ's openstac
 
 To do a refresh manuelally, open rails console, then:
 > ovh = ExtManagementSystem.find x
+>
 > EmsRefresh.refresh(ovh)
