@@ -30,3 +30,24 @@ aim_line='      connection.start'
 line_if_amqp='      unless options[:hostname].include? "cloud.ovh.net"'
 line_end_amqp='      end'
 sed -i "s/$aim_line/$line_if_amqp\n  $aim_line\n$line_end_amqp/g" $ampq_event_monitor
+
+# use identity_v2 for ovh
+openstack_identity_delegate='gems/pending/openstack/openstack_handle/identity_delegate.rb'
+aim_line='    def visible_tenants$'
+line_to_add="      if @os_handle.address.include? \"cloud.ovh.net\"
+        opts = {
+          :provider                => 'OpenStack',
+          :openstack_auth_url      => 'https://' + @os_handle.address + '/v2.0/tokens',
+          :openstack_username      => @os_handle.username,
+          :openstack_api_key       => @os_handle.password,
+          :openstack_endpoint_type => 'publicURL',
+          :openstack_region        => 'SBG1'
+        }
+        Fog::Identity::OpenStack::V2.new(opts)
+        return visible_tenants_v2
+      end
+"
+
+echo "$line_to_add" > miq_patch_tmp_text
+sed -i "/$aim_line/r miq_patch_tmp_text" $openstack_identity_delegate
+rm miq_patch_tmp_text
