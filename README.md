@@ -6,4 +6,5 @@ To do a refresh manuelally, open rails console, then:
 >
 > EmsRefresh.refresh(ovh)
 
+Tested for MIQ branch master commit 9d92be7774b77ef954843a27a1b7dbfa5a3c97f9
 Tested for MIQ branch master commit 80d04b2779e09162fba71337b43479f7a87d78c1
