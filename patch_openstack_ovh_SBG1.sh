@@ -51,3 +51,27 @@ line_to_add="      if @os_handle.address.include? \"cloud.ovh.net\"
 echo "$line_to_add" > miq_patch_tmp_text
 sed -i "/$aim_line/r miq_patch_tmp_text" $openstack_identity_delegate
 rm miq_patch_tmp_text
+
+# get public network address of ovh vm
+# should be delete if this is solved
+# https://github.com/fog/fog-openstack/issues/39
+refresh_parser='app/models/manageiq/providers/openstack/cloud_manager/refresh_parser.rb'
+aim_line='      public_network  = {:ipaddress => server.public_ip_address}.delete_nils'
+
+line_to_add="      if @os_handle.address.include? \"cloud.ovh.net\"
+        public_network = {:ipaddress => [server.addresses['Ext-Net'][0]['addr']]}
+      end
+"
+
+echo "$line_to_add" > miq_patch_tmp_text
+sed -i "/$aim_line/r miq_patch_tmp_text" $refresh_parser
+rm miq_patch_tmp_text
+
+cloudmanager_vm='/home/lzt/lbn/manageiq/app/models/manageiq/providers/cloud_manager/vm.rb'
+aim_line='    @ipaddresses ||= network_ports.collect(&:ipaddresses).flatten.compact.uniq'
+
+line_to_add="    @ipaddresses = hardware.networks.collect(&:ipaddress).compact.uniq if @ipaddress.nil? || @ipaddresses.empty?"
+
+echo "$line_to_add" > miq_patch_tmp_text
+sed -i "/$aim_line/r miq_patch_tmp_text" $cloudmanager_vm
+rm miq_patch_tmp_text
