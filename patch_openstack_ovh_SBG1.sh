@@ -67,7 +67,7 @@ echo "$line_to_add" > miq_patch_tmp_text
 sed -i "/$aim_line/r miq_patch_tmp_text" $refresh_parser
 rm miq_patch_tmp_text
 
-cloudmanager_vm='/home/lzt/lbn/manageiq/app/models/manageiq/providers/cloud_manager/vm.rb'
+cloudmanager_vm='app/models/manageiq/providers/cloud_manager/vm.rb'
 aim_line='    @ipaddresses ||= network_ports.collect(&:ipaddresses).flatten.compact.uniq'
 
 line_to_add="    @ipaddresses = hardware.networks.collect(&:ipaddress).compact.uniq if @ipaddress.nil? || @ipaddresses.empty?"
