@@ -18,7 +18,7 @@ Tested for MIQ branch master commit 80d04b2779e09162fba71337b43479f7a87d78c1
 
 download if there is no MIQ_batch/ present
 
-> git clone git@github.com:zhitongLBN/MIQ_batch.git
+> git clone https://github.com/zhitongLBN/MIQ_batch.git
 
 else update it
 
@@ -30,7 +30,7 @@ else update it
 
 execute it
 
-> cp patch_openstack_ovh_SBG1.sh /var/www/miq/vmdb/
+> cp /var/www/miq/MIQ_batch/patch_openstack_ovh_SBG1.sh /var/www/miq/vmdb/
 >
 > ./var/www/miq/vmdb/patch_openstack_ovh_SBG1.sh
 
