@@ -32,6 +32,8 @@ execute it
 
 > cp /var/www/miq/MIQ_batch/patch_openstack_ovh_SBG1.sh /var/www/miq/vmdb/
 >
-> ./var/www/miq/vmdb/patch_openstack_ovh_SBG1.sh
+> cd /var/www/miq/vmdb/
+>
+> ./patch_openstack_ovh_SBG1.sh
 
 # Done GG WP
