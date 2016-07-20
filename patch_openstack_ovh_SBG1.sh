@@ -59,7 +59,11 @@ refresh_parser='app/models/manageiq/providers/openstack/cloud_manager/refresh_pa
 aim_line='      public_network  = {:ipaddress => server.public_ip_address}.delete_nils'
 
 line_to_add="      if @os_handle.address.include? \"cloud.ovh.net\"
-        public_network = {:ipaddress => [server.addresses['Ext-Net'][0]['addr']]}
+        begin
+          public_network = {:ipaddress => [server.addresses['Ext-Net'][0]['addr']]}
+        rescue
+          \$fog_log.warning(\"server: #{id} has no ip address\")
+        end
       end
 "
 
