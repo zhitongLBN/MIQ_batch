@@ -8,6 +8,7 @@ refresh_parser_line_to_comment=(
   '      @orchestration_service      = @os_handle.detect_orchestration_service'
   '      get_availability_zones'
   '      load_orchestration_stacks'
+  '      get_cloud_services'
 )
 line_if='      unless @os_handle.address.include? "cloud.ovh.net"'
 line_end='      end'
