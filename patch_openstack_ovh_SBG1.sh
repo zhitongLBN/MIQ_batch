@@ -21,7 +21,13 @@ done
 openstack_handler='gems/pending/openstack/openstack_handle/handle.rb'
 aim_line="      opts.merge!(extra_opts) if extra_opts"
 line1="      if auth_url\.include\? \"cloud\.ovh\.net\""
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Change the region here, for OVH it can be: SBG1, BHS1, GRA1
 line2="        opts[:openstack_region] = 'SBG1'"
+#                                         ^^^^
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 line3="      end"
 sed -i "s/$aim_line/$aim_line\n$line1\n$line2\n$line3/g" $openstack_handler
 

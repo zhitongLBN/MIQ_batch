@@ -12,6 +12,22 @@ Tested for MIQ branch master commit 9d92be7774b77ef954843a27a1b7dbfa5a3c97f9
 
 Tested for MIQ branch master commit 80d04b2779e09162fba71337b43479f7a87d78c1
 
+## HOW TO CHANGE REGION
+open patch_openstack_ovh_SBG1.sh
+
+find these lines
+
+```
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Change the region here, for OVH it can be: SBG1, BHS1, GRA1
+line2="        opts[:openstack_region] = 'SBG1'"
+#                                         ^^^^
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+
+change `'SBG1'` to whatever you like!!!
+
+OVH support now `SBG1`, `BHS1`, `GRA1`
 
 ## HOW TO USE
 > cd /var/www/miq/
