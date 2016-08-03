@@ -52,4 +52,11 @@ execute it
 >
 > ./patch_openstack_ovh_SBG1.sh
 
+## AFTER
+Please reboot the evm service on the MIQ server to make the patch work
+
+> cd /var/www/miq/vmdb/
+>
+> bundle exec rake evm:restart
+
 # Done GG WP
