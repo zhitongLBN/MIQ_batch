@@ -1,33 +1,15 @@
 # MIQ_batch
-Execute this scripts in your ManageIQ folder. It will enable your MIQ's openstack use *ovh SBG1*
+Execute this scripts in your ManageIQ folder. It will enable your MIQ's openstack use *ovh*
 
 To do a refresh manuelally, open rails console, then:
 > ovh = ExtManagementSystem.find x
 >
 > EmsRefresh.refresh(ovh)
 
-Tested for MIQ branch master commit 6cb1d21f8b3301321c88a6e00fcdb58035187abc
+Tested for MIQ branch master commit 6e158f7b91424a73696724324e515b33bdd747b7
 
-Tested for MIQ branch master commit 9d92be7774b77ef954843a27a1b7dbfa5a3c97f9
-
-Tested for MIQ branch master commit 80d04b2779e09162fba71337b43479f7a87d78c1
-
-## HOW TO CHANGE REGION
-open patch_openstack_ovh_SBG1.sh
-
-find these lines
-
-```
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# Change the region here, for OVH it can be: SBG1, BHS1, GRA1
-line2="        opts[:openstack_region] = 'SBG1'"
-#                                         ^^^^
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-```
-
-change `'SBG1'` to whatever you like!!!
-
-OVH support now `SBG1`, `BHS1`, `GRA1`
+For older MIQ before please use branch `miq-80d04b`
+(until master commit 80d04b2779e09162fba71337b43479f7a87d78c1)
 
 ## HOW TO USE
 > cd /var/www/miq/
