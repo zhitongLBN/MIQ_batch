@@ -19,12 +19,13 @@ do
   sed -i "s/$line/$line_if\n\ \ $line\n$line_end/g" $refresh_parser
 done
 
+# this part is moved to 'manageiq-gems-pending' https://github.com/ManageIQ/manageiq-gems-pending
 # disable test_conntection for amqp for ovh
-ampq_event_monitor='gems/pending/openstack/events/openstack_rabbit_event_monitor.rb'
-aim_line='      connection.start'
-line_if_amqp='      unless options[:hostname].include? "cloud.ovh.net"'
-line_end_amqp='      end'
-sed -i "s/$aim_line/$line_if_amqp\n  $aim_line\n$line_end_amqp/g" $ampq_event_monitor
+# ampq_event_monitor='gems/pending/openstack/events/openstack_rabbit_event_monitor.rb'
+# aim_line='      connection.start'
+# line_if_amqp='      unless options[:hostname].include? "cloud.ovh.net"'
+# line_end_amqp='      end'
+# sed -i "s/$aim_line/$line_if_amqp\n  $aim_line\n$line_end_amqp/g" $ampq_event_monitor
 
 # get public network address of ovh vm
 # should be delete if this is solved
