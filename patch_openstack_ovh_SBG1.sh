@@ -53,3 +53,9 @@ line_to_add="    @ipaddresses = hardware.networks.collect(&:ipaddress).compact.u
 echo "$line_to_add" > miq_patch_tmp_text
 sed -i "/$aim_line/r miq_patch_tmp_text" $cloudmanager_vm
 rm miq_patch_tmp_text
+
+# disable meter event monitor for ovh
+manager_mixin='app/models/manageiq/providers/openstack/manager_mixin.rb'
+aim_line='  OpenstackEventMonitor.available?(event_monitor_options)'
+line_to_add='  return false if hostname.include? "cloud.ovh.net"'
+sed -i "s/$aim_line/$line_to_add\n  $aim_line/g" $manager_mixin
