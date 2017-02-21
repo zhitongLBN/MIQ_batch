@@ -45,6 +45,12 @@ echo "$line_to_add" > miq_patch_tmp_text
 sed -i "/$aim_line/r miq_patch_tmp_text" $refresh_parser
 rm miq_patch_tmp_text
 
+# disable uniqueness hostname for ovh
+cloud_manager='app/models/manageiq/providers/openstack/cloud_manager.rb'
+aim_line='    return unless hostname.present? # Presence is checked elsewhere'
+line_to_add='    return if hostname.include? "cloud.ovh.net"'
+sed -i "s/$aim_line/$aim_line\n$line_to_add/" $cloud_manager
+
 cloudmanager_vm='app/models/manageiq/providers/cloud_manager/vm.rb'
 aim_line='    @ipaddresses ||= network_ports.collect(&:ipaddresses).flatten.compact.uniq'
 
@@ -59,3 +65,6 @@ manager_mixin='app/models/manageiq/providers/openstack/manager_mixin.rb'
 aim_line='  OpenstackEventMonitor.available?(event_monitor_options)'
 line_to_add='  return false if hostname.include? "cloud.ovh.net"'
 sed -i "s/$aim_line/$line_to_add\n  $aim_line/g" $manager_mixin
+
+
+
