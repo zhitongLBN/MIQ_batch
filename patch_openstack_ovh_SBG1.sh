@@ -41,7 +41,7 @@ aim_line='      public_network  = {:ipaddress => server.public_ip_address}.delet
 
 line_to_add="      if @os_handle.address.include? \"cloud.ovh.net\"
         begin
-          public_network = {:ipaddress => server.addresses.values.flat_map{|net| net.first['addr']}}
+          public_network = {:ipaddress => server.addresses.values.flatten.map{ |net| net['addr'] }}
         rescue
           \$fog_log.warn(\"server: #{server.id} has no ip address\")
         end
