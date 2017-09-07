@@ -9,7 +9,7 @@ To do a refresh provider manuelally, open rails console, then:
 
 ## About MIQ's version
 
-Tested for MIQ branch master commit 99d8fcd43a1ee798f7fcea418a350bf2474d11ce -> Dec 5, 2016 (tag euwe-1)
+Tested for MIQ branch master commit 09b4f87eb047b4cd9c1284c42dde22ac87ea073d -> Aug 2, 2017 (tag fine-3)
 
 For old miq please check your version on this url:
 
@@ -20,6 +20,8 @@ then compare the commit date, use the branch which is the first less then your m
 > if your miq has a version with commit date Oct 2016, then use branch `miq-6e158f`
 >
 > as Sep 4 2016 is the first less then Oct 2016
+
+use branch `euwe-1` (tested for miq commit 99d8fcd43a1ee798f7fcea418a350bf2474d11ce) -> Dec 5, 2016 (tag euwe-1)
 
 use branch `miq-6e158f` (tested for miq commit 6e158f7b91424a73696724324e515b33bdd747b7) -> Sep 4, 2016
 
