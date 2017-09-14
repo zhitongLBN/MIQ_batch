@@ -1,0 +1,283 @@
+diff --git a/app/models/manageiq/providers/cloud_manager/vm.rb b/app/models/manageiq/providers/cloud_manager/vm.rb
+index 8d27b25..8616148 100644
+--- a/app/models/manageiq/providers/cloud_manager/vm.rb
++++ b/app/models/manageiq/providers/cloud_manager/vm.rb
+@@ -67,6 +67,7 @@ class ManageIQ::Providers::CloudManager::Vm < ::Vm
+ 
+   def ipaddresses
+     @ipaddresses ||= network_ports.collect(&:ipaddresses).flatten.compact.uniq
++    @ipaddresses = hardware.networks.collect(&:ipaddress).compact.uniq if @ipaddress.nil? || @ipaddresses.empty?
+   end
+ 
+   def floating_ip_addresses
+diff --git a/app/models/manageiq/providers/openstack/cloud_manager.rb b/app/models/manageiq/providers/openstack/cloud_manager.rb
+index b580dc4..7218f8a 100644
+--- a/app/models/manageiq/providers/openstack/cloud_manager.rb
++++ b/app/models/manageiq/providers/openstack/cloud_manager.rb
+@@ -98,12 +98,22 @@ class ManageIQ::Providers::Openstack::CloudManager < ManageIQ::Providers::CloudM
+   end
+ 
+   def cinder_service
+-    vs = openstack_handle.detect_volume_service
++    tenant_name = nil
++    if openstack_handle.address.include?("cloud.ovh.net") || openstack_handle.address.include?("linkbynet")
++      tenant_name = openstack_handle.tenant_names.first
++    end
++
++    vs = openstack_handle.detect_volume_service tenant_name
+     vs.name == :cinder ? vs : nil
+   end
+ 
+   def swift_service
+-    vs = openstack_handle.detect_storage_service
++    tenant_name = nil
++    if openstack_handle.address.include?("cloud.ovh.net") || openstack_handle.address.include?("linkbynet")
++      tenant_name = openstack_handle.tenant_names.first
++    end
++
++    vs = openstack_handle.detect_storage_service tenant_name
+     vs.name == :swift ? vs : nil
+   end
+ 
+@@ -127,6 +137,7 @@ class ManageIQ::Providers::Openstack::CloudManager < ManageIQ::Providers::CloudM
+   def hostname_uniqueness_valid?
+     return unless hostname_required?
+     return unless hostname.present? # Presence is checked elsewhere
++    return if hostname.include? "cloud.ovh.net"
+ 
+     existing_providers = Endpoint.where(:hostname => hostname.downcase)
+                                  .where.not(:resource_id => id).includes(:resource)
+@@ -161,11 +172,21 @@ class ManageIQ::Providers::Openstack::CloudManager < ManageIQ::Providers::CloudM
+   end
+ 
+   def supports_cinder_service?
+-    openstack_handle.detect_volume_service.name == :cinder
++    tenant_name = nil
++    if openstack_handle.address.include?("cloud.ovh.net") || openstack_handle.address.include?("linkbynet")
++      tenant_name = openstack_handle.tenant_names.first
++    end
++
++    openstack_handle.detect_volume_service(tenant_name).name == :cinder
+   end
+ 
+   def supports_swift_service?
+-    openstack_handle.detect_storage_service.name == :swift
++    tenant_name = nil
++    if openstack_handle.address.include?("cloud.ovh.net") || openstack_handle.address.include?("linkbynet")
++      tenant_name = openstack_handle.tenant_names.first
++    end
++
++    openstack_handle.detect_storage_service(tenant_name).name == :swift
+   end
+ 
+   def supports_authentication?(authtype)
+diff --git a/app/models/manageiq/providers/openstack/cloud_manager/refresh_parser.rb b/app/models/manageiq/providers/openstack/cloud_manager/refresh_parser.rb
+index 86d37c7..8b8e1bb 100644
+--- a/app/models/manageiq/providers/openstack/cloud_manager/refresh_parser.rb
++++ b/app/models/manageiq/providers/openstack/cloud_manager/refresh_parser.rb
+@@ -15,23 +15,37 @@ module ManageIQ::Providers
+ 
+     def initialize(ems, options = nil)
+       @ems               = ems
+-      @connection        = ems.connect
++      @os_handle                  = ems.openstack_handle
++      tenant_name = nil
++      if @os_handle.address.include?("cloud.ovh.net") || @os_handle.address.include?("linkbynet")
++        tenant_name = @os_handle.tenant_names.first
++      end
++
++      if(@os_handle.address.include?("cloud.ovh.net") || @os_handle.address.include?("linkbynet"))
++        @connection        = @os_handle.compute_service tenant_name
++      else
++        @connection        = ems.connect
++      end
++
+       @options           = options || {}
+       @data              = {}
+       @data_index        = {}
+       @known_flavors     = Set.new
+       @resource_to_stack = {}
+ 
+-      @os_handle                  = ems.openstack_handle
+       @compute_service            = @connection # for consistency
+       # TODO(lsmola) delete network_service once everything is moved under NetworkManager
+-      @network_service            = @os_handle.detect_network_service
+-      @nfv_service                = @os_handle.detect_nfv_service
+-      @image_service              = @os_handle.detect_image_service
+-      @volume_service             = @os_handle.detect_volume_service
+-      @storage_service            = @os_handle.detect_storage_service
++      @network_service            = @os_handle.detect_network_service  tenant_name
++      unless(@os_handle.address.include?("cloud.ovh.net") || @os_handle.address.include?("linkbynet"))
++        @nfv_service                = @os_handle.detect_nfv_service tenant_name
++      end
++      @image_service              = @os_handle.detect_image_service tenant_name
++      @volume_service             = @os_handle.detect_volume_service tenant_name
++      @storage_service            = @os_handle.detect_storage_service tenant_name
+       @identity_service           = @os_handle.identity_service
+-      @orchestration_service      = @os_handle.detect_orchestration_service
++      unless(@os_handle.address.include?("cloud.ovh.net") || @os_handle.address.include?("linkbynet"))
++        @orchestration_service      = @os_handle.detect_orchestration_service tenant_name
++      end
+ 
+       validate_required_services
+     end
+@@ -55,19 +69,29 @@ module ManageIQ::Providers
+ 
+       $fog_log.info("#{log_header}...")
+       # The order of the below methods does matter, because there are inner dependencies of the data!
+-      get_tenants
++      unless @os_handle.address.include? "cloud.ovh.net"
++        get_tenants
++      end
+       get_flavors
+-      get_availability_zones
+-      get_host_aggregates
++      unless @os_handle.address.include? "cloud.ovh.net"
++        get_availability_zones
++      end
++      unless @os_handle.address.include? "cloud.ovh.net"
++        get_host_aggregates
++      end
+       get_quotas
+       get_key_pairs
+-      load_orchestration_stacks
++      unless @os_handle.address.include? "cloud.ovh.net"
++        load_orchestration_stacks
++      end
+       get_vnfs
+       get_vnfds
+       # get_hosts
+       get_images
+       get_servers
+-      get_cloud_services
++      unless @os_handle.address.include? "cloud.ovh.net"
++        get_cloud_services
++      end
+ 
+       $fog_log.info("#{log_header}...Complete")
+ 
+@@ -294,6 +318,14 @@ module ManageIQ::Providers
+       # for connections, delete when not needed.
+       private_network = {:ipaddress => server.private_ip_address}.delete_nils
+       public_network  = {:ipaddress => server.public_ip_address}.delete_nils
++      if @os_handle.address.include? "cloud.ovh.net"
++        begin
++          public_network = {:ipaddress => server.addresses.values.flatten.map{ |net| net['addr'] }}
++        rescue
++          $fog_log.warn("server: #{server.id} has no ip address")
++        end
++      end
++
+       if parent_hosts
+         # Find associated host from OpenstackInfra
+         filtered_hosts = parent_hosts.select do |x|
+diff --git a/app/models/manageiq/providers/openstack/event_catcher_mixin.rb b/app/models/manageiq/providers/openstack/event_catcher_mixin.rb
+index ba07219..e489680 100644
+--- a/app/models/manageiq/providers/openstack/event_catcher_mixin.rb
++++ b/app/models/manageiq/providers/openstack/event_catcher_mixin.rb
+@@ -2,6 +2,8 @@ module ManageIQ::Providers::Openstack::EventCatcherMixin
+   # seems like most of this class could be boilerplate when compared against EventCatcherRhevm
+   def event_monitor_handle
+     require 'openstack/openstack_event_monitor'
++    return if @ems.hostname.include? "cloud.ovh.net"
++
+     unless @event_monitor_handle
+       options = @ems.event_monitor_options
+       options[:topics]                        = worker_settings[:topics]
+@@ -35,6 +37,8 @@ module ManageIQ::Providers::Openstack::EventCatcherMixin
+   end
+ 
+   def monitor_events
++    return if @ems.hostname.include? "cloud.ovh.net"
++
+     event_monitor_handle.start
+     event_monitor_handle.each_batch do |events|
+       event_monitor_running
+diff --git a/app/models/manageiq/providers/openstack/manager_mixin.rb b/app/models/manageiq/providers/openstack/manager_mixin.rb
+index a4819ab..842a19f 100644
+--- a/app/models/manageiq/providers/openstack/manager_mixin.rb
++++ b/app/models/manageiq/providers/openstack/manager_mixin.rb
+@@ -97,6 +97,7 @@ module ManageIQ::Providers::Openstack::ManagerMixin
+ 
+   def event_monitor_available?
+     require 'openstack/openstack_event_monitor'
++    return false if hostname.include? "cloud.ovh.net"
+     OpenstackEventMonitor.available?(event_monitor_options)
+   rescue => e
+     _log.error("Exception trying to find openstack event monitor for #{name}(#{hostname}). #{e.message}")
+@@ -105,6 +106,7 @@ module ManageIQ::Providers::Openstack::ManagerMixin
+   end
+ 
+   def sync_event_monitor_available?
++    return false if hostname.include? "cloud.ovh.net"
+     event_monitor_options[:events_monitor] == :ceilometer ? authentication_status_ok? : event_monitor_available?
+   end
+ 
+@@ -141,7 +143,7 @@ module ManageIQ::Providers::Openstack::ManagerMixin
+   end
+ 
+   def verify_api_credentials(options = {})
+-    options[:service] = "Compute"
++    options[:service] = "Identity"
+     with_provider_connection(options) {}
+     true
+   rescue => err
+diff --git a/app/models/manageiq/providers/openstack/network_manager/refresh_parser.rb b/app/models/manageiq/providers/openstack/network_manager/refresh_parser.rb
+index 425bd8e..2f1b15d 100644
+--- a/app/models/manageiq/providers/openstack/network_manager/refresh_parser.rb
++++ b/app/models/manageiq/providers/openstack/network_manager/refresh_parser.rb
+@@ -10,7 +10,9 @@ module ManageIQ::Providers
+ 
+     def initialize(ems, options = nil)
+       @ems               = ems
+-      @connection        = ems.connect
++      unless @ems.address.include?("cloud.ovh.net") || @ems.address.include?("linkbynet")
++        @connection        = ems.connect
++      end
+       @options           = options || {}
+       @data              = {}
+       @data_index        = {}
+@@ -18,7 +20,12 @@ module ManageIQ::Providers
+       @resource_to_stack = {}
+ 
+       @os_handle        = ems.openstack_handle
+-      @network_service  = @os_handle.detect_network_service
++      tenant_name = nil
++      if @os_handle.address.include?("cloud.ovh.net") || @os_handle.address.include?("linkbynet")
++        tenant_name = @os_handle.tenant_names.first
++      end
++
++      @network_service  = @os_handle.detect_network_service tenant_name
+ 
+       validate_required_services
+     end
+diff --git a/app/models/manageiq/providers/storage_manager/cinder_manager/refresh_parser.rb b/app/models/manageiq/providers/storage_manager/cinder_manager/refresh_parser.rb
+index 571aa34..b94321e 100644
+--- a/app/models/manageiq/providers/storage_manager/cinder_manager/refresh_parser.rb
++++ b/app/models/manageiq/providers/storage_manager/cinder_manager/refresh_parser.rb
+@@ -14,7 +14,9 @@ module ManageIQ::Providers
+ 
+     def initialize(ems, options = nil)
+       @ems               = ems
+-      @connection        = ems.connect
++      unless(@ems.address.include?("cloud.ovh.net") || @ems.address.include?("linkbynet"))
++        @connection        = ems.connect
++      end
+       @options           = options || {}
+       @data              = {}
+       @data_index        = {}
+diff --git a/app/models/manageiq/providers/storage_manager/swift_manager/refresh_parser.rb b/app/models/manageiq/providers/storage_manager/swift_manager/refresh_parser.rb
+index d4fb6b6..f7f4a54 100644
+--- a/app/models/manageiq/providers/storage_manager/swift_manager/refresh_parser.rb
++++ b/app/models/manageiq/providers/storage_manager/swift_manager/refresh_parser.rb
+@@ -11,7 +11,9 @@ module ManageIQ::Providers
+ 
+     def initialize(ems, options = nil)
+       @ems               = ems
+-      @connection        = ems.connect
++      unless(@ems.address.include?("cloud.ovh.net") || @ems.address.include?("linkbynet"))
++        @connection        = ems.connect
++      end
+       @options           = options || {}
+       @data              = {}
+       @data_index        = {}
